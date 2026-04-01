@@ -35,15 +35,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # MCP HTTP app
     mcp_app = mcp.http_app(path="/")
 
-    # Combined app
-    @asynccontextmanager
-    async def lifespan(app: FastAPI):
-        yield
-
     app = FastAPI(
         title="MCP Mail Server",
         version="0.1.0",
-        lifespan=lifespan,
+        lifespan=mcp_app.lifespan,
     )
 
     @app.exception_handler(ValueError)
