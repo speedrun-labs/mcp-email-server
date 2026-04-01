@@ -111,9 +111,10 @@ class Settings:
 
     def __init__(self) -> None:
         self.app = AppSettings()
+        auth_env = AuthEnvSettings()
         self.auth = AuthSettings(
-            mode=AuthEnvSettings().mode,
-            bearer_token=AuthEnvSettings().bearer_token,
+            mode=auth_env.mode,
+            bearer_token=auth_env.bearer_token,
         )
         self._accounts: dict[str, AccountConfig] = {}
         self._default_name: str = "default"

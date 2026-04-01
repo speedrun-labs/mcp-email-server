@@ -53,6 +53,7 @@ All tools accept an optional `account` parameter for multi-account support.
 | POST | `/api/v1/mail/send` | Send email |
 | POST | `/api/v1/mail/send-bulk` | Bulk send with templates |
 | GET | `/api/v1/mail/health` | Health check (unauthenticated, for K8s probes) |
+| GET | `/api/v1/mail/test-connection` | Full SMTP/IMAP connectivity test |
 | GET | `/api/v1/mail/messages` | List emails |
 | GET | `/api/v1/mail/messages/{ids}` | Get email content |
 | GET | `/api/v1/mail/folders` | List folders |

@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import ssl
-import uuid
-from datetime import datetime, timezone
 from email.message import EmailMessage
-from email.utils import formataddr, formatdate, make_msgid
+from email.utils import formataddr, formatdate, getaddresses, make_msgid
 
 import aiosmtplib
 
@@ -96,9 +94,9 @@ async def send_email(
 
     recipients = []
     if message["To"]:
-        recipients.extend([a.strip() for a in message["To"].split(",")])
+        recipients.extend(addr for _, addr in getaddresses([message["To"]]) if addr)
     if message["Cc"]:
-        recipients.extend([a.strip() for a in message["Cc"].split(",")])
+        recipients.extend(addr for _, addr in getaddresses([message["Cc"]]) if addr)
     if bcc:
         recipients.extend(bcc)
 
