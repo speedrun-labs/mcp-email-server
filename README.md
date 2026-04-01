@@ -79,31 +79,30 @@ Default account via `SMTP_*` / `IMAP_*` env vars. Additional accounts via `ACCOU
 ACCOUNTS_JSON={"work":{"smtp":{"host":"smtp.office365.com","port":587,"username":"me@company.com","password":"...","start_tls":true,"from_address":"me@company.com"},"imap":{"host":"outlook.office365.com","port":993,"username":"me@company.com","password":"...","use_ssl":true},"from_address":"me@company.com","rate_limit_per_minute":30,"allowed_domains":["company.com"]}}
 ```
 
-### Claude Desktop
+### Claude Desktop (stdio mode)
+
+Configure your `.env` file first, then add to Claude Desktop config:
 
 ```json
 {
   "mcpServers": {
     "mcp-mail": {
       "command": "uv",
-      "args": ["run", "--project", "/path/to/mcp-mail", "mcp-mail"],
-      "env": {
-        "SMTP_HOST": "smtp.gmail.com",
-        "SMTP_PORT": "587",
-        "SMTP_USERNAME": "you@gmail.com",
-        "SMTP_PASSWORD": "your-app-password",
-        "SMTP_START_TLS": "true",
-        "SMTP_FROM_ADDRESS": "you@gmail.com",
-        "IMAP_HOST": "imap.gmail.com",
-        "IMAP_PORT": "993",
-        "IMAP_USERNAME": "you@gmail.com",
-        "IMAP_PASSWORD": "your-app-password",
-        "IMAP_USE_SSL": "true"
-      }
+      "args": ["run", "--project", "/path/to/mcp-mail", "mcp-mail"]
     }
   }
 }
 ```
+
+The server reads SMTP/IMAP credentials from the `.env` file in the project directory — not from the Claude Desktop config.
+
+### Remote agents (HTTP mode)
+
+```bash
+uv run mcp-mail --transport http --host 0.0.0.0 --port 8000
+```
+
+Agents connect to `http://host:8000/mcp` (MCP) or `http://host:8000/api/v1/*` (REST).
 
 ## Development
 
