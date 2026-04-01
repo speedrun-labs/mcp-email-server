@@ -33,7 +33,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api_router = create_router(service, verify_bearer, no_auth)
 
     # MCP HTTP app
-    mcp_app = mcp.http_app(path="/mcp")
+    mcp_app = mcp.http_app(path="/")
 
     # Combined app
     @asynccontextmanager
