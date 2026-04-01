@@ -53,7 +53,13 @@ def create_router(service: EmailService, verify_bearer, no_auth) -> APIRouter:
         )
 
     @router.get("/mail/health", dependencies=[Depends(no_auth)])
-    async def health(account: str | None = Query(None)) -> dict:
+    async def health() -> dict:
+        """Lightweight health check for K8s probes. No SMTP/IMAP connection test."""
+        return {"status": "ok"}
+
+    @router.get("/mail/test-connection", dependencies=[Depends(verify_bearer)])
+    async def test_connection(account: str | None = Query(None)) -> dict:
+        """Full SMTP/IMAP connectivity test."""
         return await service.test_connection(account)
 
     # --- Read ---
