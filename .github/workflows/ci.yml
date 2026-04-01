@@ -16,9 +16,11 @@ jobs:
       - name: Install uv
         run: pip install uv
       - name: Install deps
-        run: uv sync --dev
+        run: |
+          uv sync --dev
+          uv pip install pytest pytest-asyncio httpx
       - name: Unit tests
-        run: uv run python -m pytest tests/ -v
+        run: uv run pytest tests/ -v
         env:
           SMTP_HOST: localhost
           SMTP_PORT: '1025'
@@ -59,8 +61,8 @@ jobs:
       - name: Update GitOps repo
         run: |
           TAG=${GITHUB_REF_NAME}_${GITHUB_SHA::8}
-          git clone https://${{ secrets.REGISTRY_PASSWORD }}@github.com/${{ github.repository_owner }}/gitops.git
-          cd gitops/cluster-dev
+          git clone https://${{ secrets.REGISTRY_PASSWORD }}@github.com/speedrun-ventures/gitops.git
+          cd gitops/cluster-dev/mcp-email-server
           curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
           ./kustomize edit set image image_mcp_email_server=$REGISTRY/$IMAGE:$TAG
           rm kustomize
