@@ -1,6 +1,6 @@
-# mcp-mail
+# mcp-email-server
 
-Stateless MCP server for AI agents to send and read email via SMTP/IMAP. Exposes both MCP tools and REST API endpoints.
+Stateless MCP server for AI agents to send and read email via SMTP/IMAP. Exposes both MCP tools and REST API endpoints. Designed for Kubernetes deployment.
 
 ## Features
 
@@ -9,7 +9,7 @@ Stateless MCP server for AI agents to send and read email via SMTP/IMAP. Exposes
 - **Multi-account** with per-account isolation (rate limits, domain allowlists)
 - **Mail merge** (`mail_send_bulk`) with `{{variable}}` templates from JSON/CSV
 - **Bearer token auth** on both MCP and REST endpoints
-- **Stateless** — deploys to Kubernetes, no database required
+- **Stateless** — no database, deploys to Kubernetes
 
 ## Quick Start
 
@@ -21,10 +21,10 @@ uv sync
 cp .env.example .env
 # Edit .env with your SMTP/IMAP credentials
 
-# Run (stdio mode for Claude Desktop)
+# Run (stdio mode)
 uv run mcp-mail
 
-# Run (HTTP mode for REST API + MCP)
+# Run (HTTP mode)
 uv run mcp-mail --transport http
 ```
 
@@ -52,7 +52,7 @@ All tools accept an optional `account` parameter for multi-account support.
 | GET | `/api/v1/accounts` | List accounts |
 | POST | `/api/v1/mail/send` | Send email |
 | POST | `/api/v1/mail/send-bulk` | Bulk send with templates |
-| GET | `/api/v1/mail/health` | Health check (no auth) |
+| GET | `/api/v1/mail/health` | Health check (unauthenticated, for K8s probes) |
 | GET | `/api/v1/mail/messages` | List emails |
 | GET | `/api/v1/mail/messages/{ids}` | Get email content |
 | GET | `/api/v1/mail/folders` | List folders |
@@ -67,9 +67,11 @@ All via environment variables. See [.env.example](.env.example) for full referen
 ### Authentication
 
 ```env
-AUTH_MODE=bearer
-AUTH_BEARER_TOKEN=your-secret-token
+AUTH_MODE=bearer                    # bearer | none
+AUTH_BEARER_TOKEN=your-secret-token # required when AUTH_MODE=bearer
 ```
+
+Set `AUTH_MODE=none` for local development (no token required).
 
 ### Multi-Account
 
@@ -79,30 +81,65 @@ Default account via `SMTP_*` / `IMAP_*` env vars. Additional accounts via `ACCOU
 ACCOUNTS_JSON={"work":{"smtp":{"host":"smtp.office365.com","port":587,"username":"me@company.com","password":"...","start_tls":true,"from_address":"me@company.com"},"imap":{"host":"outlook.office365.com","port":993,"username":"me@company.com","password":"...","use_ssl":true},"from_address":"me@company.com","rate_limit_per_minute":30,"allowed_domains":["company.com"]}}
 ```
 
+## Deployment
+
 ### Claude Desktop (stdio mode)
 
-Configure your `.env` file first, then add to Claude Desktop config:
+Configure your `.env` file in the project directory first, then add to Claude Desktop config:
 
 ```json
 {
   "mcpServers": {
-    "mcp-mail": {
+    "mcp-email-server": {
       "command": "uv",
-      "args": ["run", "--project", "/path/to/mcp-mail", "mcp-mail"]
+      "args": ["run", "--project", "/path/to/mcp-email-server", "mcp-mail"]
     }
   }
 }
 ```
 
-The server reads SMTP/IMAP credentials from the `.env` file in the project directory — not from the Claude Desktop config.
-
-### Remote agents (HTTP mode)
+### Docker
 
 ```bash
-uv run mcp-mail --transport http --host 0.0.0.0 --port 8000
+docker build -t mcp-email-server .
+
+# HTTP mode
+docker run -p 8000:8000 --env-file .env mcp-email-server
+
+# stdio mode
+docker run -i --env-file .env mcp-email-server --transport stdio
 ```
 
-Agents connect to `http://host:8000/mcp` (MCP) or `http://host:8000/api/v1/*` (REST).
+### Kubernetes
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-email-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mcp-email-server
+  template:
+    metadata:
+      labels:
+        app: mcp-email-server
+    spec:
+      containers:
+      - name: mcp-email-server
+        image: mcp-email-server:latest
+        args: ["--transport", "http"]
+        ports: [{ containerPort: 8000 }]
+        envFrom:
+        - secretRef: { name: mcp-email-server-accounts }
+        - secretRef: { name: mcp-email-server-auth }
+        livenessProbe:
+          httpGet: { path: /api/v1/mail/health, port: 8000 }
+        readinessProbe:
+          httpGet: { path: /api/v1/mail/health, port: 8000 }
+```
 
 ## Development
 
